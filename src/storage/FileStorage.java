@@ -65,6 +65,12 @@ public class FileStorage {
             return new ArrayList<>();
         }
 
+        // 如果文件存在但内容为空，说明还没有真正保存过文章，也直接返回空列表。
+        if (file.length() == 0) {
+            System.out.println("文章数据文件为空，可能是第一次运行，将返回空列表。");
+            return new ArrayList<>();
+        }
+
         try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(file))) {
             // readObject 读出来的是 Object，所以需要强制转换回 List<Article>。
             return (List<Article>) inputStream.readObject();

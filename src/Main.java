@@ -1,3 +1,6 @@
+import model.Article;
+import service.ArticleService;
+
 import java.util.Scanner;
 
 public class Main {
@@ -11,7 +14,7 @@ public class Main {
 
             switch (choice) {
                 case "1":
-                    System.out.println("功能开发中：立即爬取最新资讯");
+                    crawlLatestArticles();
                     break;
                 case "2":
                     System.out.println("功能开发中：关键词搜索");
@@ -50,5 +53,28 @@ public class Main {
         System.out.println("0. 退出");
         System.out.println("================================");
         System.out.print("请选择：");
+    }
+
+    private static void crawlLatestArticles() {
+        System.out.println("程序爬取官网通知");
+
+        ArticleService articleService = new ArticleService();
+        ArticleService.CrawlResult result = articleService.crawlAndSaveArticles();
+
+        System.out.println("本次爬取 " + result.getTotalCount() + " 条");
+        System.out.println("新增 " + result.getNewCount() + " 条");
+
+        if (result.getNewArticles().isEmpty()) {
+            System.out.println("暂无新增文章");
+            return;
+        }
+
+        System.out.println("新增文章列表：");
+        for (Article article : result.getNewArticles()) {
+            System.out.println("标题：" + article.getTitle());
+            System.out.println("日期：" + article.getPublishDate());
+            System.out.println("链接：" + article.getUrl());
+            System.out.println();
+        }
     }
 }
