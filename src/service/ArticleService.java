@@ -91,6 +91,32 @@ public class ArticleService {
     }
 
     /**
+     * 根据关键词搜索本地已经保存的历史文章。
+     * 搜索范围由 Article.containsKeyword() 负责，包括标题、摘要和来源。
+     */
+    public SearchResult searchArticlesByKeyword(String keyword) {
+        // 先从本地文件读取全部历史文章。
+        List<Article> allArticles = fileStorage.loadArticles();
+
+        // matchedArticles 用来保存所有匹配关键词的文章。
+        List<Article> matchedArticles = new ArrayList<>();
+
+        // 如果关键词为空，就直接返回空结果，不做无意义搜索。
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return new SearchResult(allArticles.size(), matchedArticles);
+        }
+
+        // 遍历历史文章，复用 Article 自己的关键词判断方法。
+        for (Article article : allArticles) {
+            if (article.containsKeyword(keyword)) {
+                matchedArticles.add(article);
+            }
+        }
+
+        return new SearchResult(allArticles.size(), matchedArticles);
+    }
+
+    /**
      * 保存一次爬取的结果，方便 Main 中显示。
      *
      * static class 表示这是 ArticleService 里面定义的一个“小类”。
@@ -134,6 +160,39 @@ public class ArticleService {
          */
         public List<Article> getNewArticles() {
             return newArticles;
+        }
+    }
+
+    /**
+     * 保存一次关键词搜索的结果，方便 Main 区分“没有历史文章”和“没有匹配结果”。
+     */
+    public static class SearchResult {
+        // 本地历史文章总数。
+        private int totalCount;
+
+        // 匹配关键词的文章列表。
+        private List<Article> matchedArticles;
+
+        /**
+         * 构造方法：创建 SearchResult 对象时，把历史总数和匹配列表传进来。
+         */
+        public SearchResult(int totalCount, List<Article> matchedArticles) {
+            this.totalCount = totalCount;
+            this.matchedArticles = matchedArticles;
+        }
+
+        /**
+         * 获取本地历史文章总数。
+         */
+        public int getTotalCount() {
+            return totalCount;
+        }
+
+        /**
+         * 获取匹配关键词的文章列表。
+         */
+        public List<Article> getMatchedArticles() {
+            return matchedArticles;
         }
     }
 }

@@ -17,7 +17,7 @@ public class Main {
                     crawlLatestArticles();
                     break;
                 case "2":
-                    System.out.println("功能开发中：关键词搜索");
+                    searchArticles(scanner);
                     break;
                 case "3":
                     System.out.println("功能开发中：管理我的订阅关键词");
@@ -73,6 +73,38 @@ public class Main {
         for (Article article : result.getNewArticles()) {
             System.out.println("标题：" + article.getTitle());
             System.out.println("日期：" + article.getPublishDate());
+            System.out.println("链接：" + article.getUrl());
+            System.out.println();
+        }
+    }
+
+    private static void searchArticles(Scanner scanner) {
+        System.out.print("请输入搜索关键词：");
+        String keyword = scanner.nextLine().trim();
+
+        if (keyword.isEmpty()) {
+            System.out.println("关键词不能为空，请重新输入。");
+            return;
+        }
+
+        ArticleService articleService = new ArticleService();
+        ArticleService.SearchResult result = articleService.searchArticlesByKeyword(keyword);
+
+        if (result.getTotalCount() == 0) {
+            System.out.println("暂无历史文章，请先选择菜单 1 爬取最新资讯。");
+            return;
+        }
+
+        if (result.getMatchedArticles().isEmpty()) {
+            System.out.println("没有找到包含“" + keyword + "”的文章，请尝试更换关键词。");
+            return;
+        }
+
+        System.out.println("共找到 " + result.getMatchedArticles().size() + " 篇相关文章：");
+        for (Article article : result.getMatchedArticles()) {
+            System.out.println("标题：" + article.getTitle());
+            System.out.println("日期：" + article.getPublishDate());
+            System.out.println("来源：" + article.getSource());
             System.out.println("链接：" + article.getUrl());
             System.out.println();
         }
