@@ -1,6 +1,8 @@
 import model.Article;
 import service.ArticleService;
+import service.SubscriptionService;
 
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -20,7 +22,7 @@ public class Main {
                     searchArticles(scanner);
                     break;
                 case "3":
-                    System.out.println("功能开发中：管理我的订阅关键词");
+                    manageSubscriptions(scanner);
                     break;
                 case "4":
                     System.out.println("功能开发中：查看统计报告");
@@ -63,6 +65,8 @@ public class Main {
 
         System.out.println("本次爬取 " + result.getTotalCount() + " 条");
         System.out.println("新增 " + result.getNewCount() + " 条");
+
+        checkSubscriptionMatches(result.getNewArticles());
 
         if (result.getNewArticles().isEmpty()) {
             System.out.println("暂无新增文章");
@@ -107,6 +111,129 @@ public class Main {
             System.out.println("来源：" + article.getSource());
             System.out.println("链接：" + article.getUrl());
             System.out.println();
+        }
+    }
+
+    private static void checkSubscriptionMatches(List<Article> newArticles) {
+        SubscriptionService subscriptionService = new SubscriptionService();
+        List<String> keywords = subscriptionService.getAllKeywords();
+
+        System.out.println();
+        System.out.println("订阅关键词校对：");
+
+        if (keywords.isEmpty()) {
+            System.out.println("当前还没有订阅关键词，可在菜单 3 中添加。");
+            return;
+        }
+
+        if (newArticles.isEmpty()) {
+            System.out.println("本次没有新增文章，所以没有新的订阅命中。");
+            return;
+        }
+
+        List<Article> matchedArticles = subscriptionService.findMatchedArticles(newArticles);
+        if (matchedArticles.isEmpty()) {
+            System.out.println("本次新增文章暂未命中你的订阅关键词。");
+            return;
+        }
+
+        System.out.println("以下新增文章命中你的订阅关键词：");
+        for (Article article : matchedArticles) {
+            List<String> matchedKeywords = subscriptionService.findMatchedKeywords(article);
+
+            System.out.println("命中关键词：" + String.join("、", matchedKeywords));
+            System.out.println("标题：" + article.getTitle());
+            System.out.println("日期：" + article.getPublishDate());
+            System.out.println("链接：" + article.getUrl());
+            System.out.println();
+        }
+    }
+
+    private static void manageSubscriptions(Scanner scanner) {
+        SubscriptionService subscriptionService = new SubscriptionService();
+        boolean managing = true;
+
+        while (managing) {
+            printSubscriptionMenu();
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1":
+                    showSubscriptionKeywords(subscriptionService);
+                    break;
+                case "2":
+                    addSubscriptionKeyword(scanner, subscriptionService);
+                    break;
+                case "3":
+                    deleteSubscriptionKeyword(scanner, subscriptionService);
+                    break;
+                case "0":
+                    managing = false;
+                    break;
+                default:
+                    System.out.println("输入无效，请重新选择。");
+                    break;
+            }
+
+            if (managing) {
+                System.out.println();
+            }
+        }
+    }
+
+    private static void printSubscriptionMenu() {
+        System.out.println("========== 管理我的订阅关键词 ==========");
+        System.out.println("1. 查看订阅关键词");
+        System.out.println("2. 添加订阅关键词");
+        System.out.println("3. 删除订阅关键词");
+        System.out.println("0. 返回主菜单");
+        System.out.println("====================================");
+        System.out.print("请选择：");
+    }
+
+    private static void showSubscriptionKeywords(SubscriptionService subscriptionService) {
+        List<String> keywords = subscriptionService.getAllKeywords();
+
+        if (keywords.isEmpty()) {
+            System.out.println("当前还没有订阅关键词。");
+            return;
+        }
+
+        System.out.println("当前订阅关键词：");
+        for (String keyword : keywords) {
+            System.out.println("- " + keyword);
+        }
+    }
+
+    private static void addSubscriptionKeyword(Scanner scanner, SubscriptionService subscriptionService) {
+        System.out.print("请输入要添加的订阅关键词：");
+        String keyword = scanner.nextLine().trim();
+
+        if (keyword.isEmpty()) {
+            System.out.println("关键词不能为空，添加失败。");
+            return;
+        }
+
+        if (subscriptionService.addKeyword(keyword)) {
+            System.out.println("已添加订阅关键词：“" + keyword + "”。");
+        } else {
+            System.out.println("订阅关键词“" + keyword + "”已存在，不需要重复添加。");
+        }
+    }
+
+    private static void deleteSubscriptionKeyword(Scanner scanner, SubscriptionService subscriptionService) {
+        System.out.print("请输入要删除的订阅关键词：");
+        String keyword = scanner.nextLine().trim();
+
+        if (keyword.isEmpty()) {
+            System.out.println("关键词不能为空，删除失败。");
+            return;
+        }
+
+        if (subscriptionService.deleteKeyword(keyword)) {
+            System.out.println("已删除订阅关键词：“" + keyword + "”。");
+        } else {
+            System.out.println("没有找到订阅关键词“" + keyword + "”，删除失败。");
         }
     }
 }
